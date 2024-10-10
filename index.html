@@ -1,0 +1,1137 @@
+<!DOCTYPE: html>
+
+<html>
+<head>
+	<title>NT Pastoral Fire Watch</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css"/>
+	<script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
+	<script src='https://unpkg.com/@turf/turf/turf.min.js'></script>
+	<script src="nt_polygon.geojson" type="text/javascript"></script>
+	<script src="district_stats.geojson" type="text/javascript"></script>
+	<script src="property_stats.geojson" type="text/javascript"></script>
+	
+	<!--script src="pastoral_firescars.geojson" type="text/javascript"></script-->
+	<script src="fs_early_23.geojson" type="text/javascript"></script>
+	<script src="fs_late_23.geojson" type="text/javascript"></script>
+	<script src="fs_early_24.geojson" type="text/javascript"></script>
+	<script src="fs_late_24.geojson" type="text/javascript"></script>
+	
+	<script src="pastoral_land_types.geojson" type="text/javascript"></script>
+	<script src="bores.geojson" type="text/javascript"></script>
+	
+<style>
+	.map{
+		height: 100%;
+		width: 100%;
+	}
+</style>
+<head>
+<body>
+<div class="map" id="pastoral-map"></div>
+<div class="inset">
+<input type="checkbox" class="main-check-box" id="parent-checkbox">Fire scars (pastoral land)</input></br>
+<input type="checkbox" class="check-box" id="fs-late-24-checkbox"><div class="legend-patch" id="lp-fs-1"></div>Jul 1-Oct 8 2024</input></br>
+<input type="checkbox" class="check-box" id="fs-early-24-checkbox"><div class="legend-patch" id="lp-fs-2"></div>Jan-Jun 2024</input></br>
+<input type="checkbox" class="check-box" id="fs-late-23-checkbox"><div class="legend-patch" id="lp-fs-3"></div>Jul-Dec 2023</input></br>
+<input type="checkbox" class="check-box" id="fs-early-23-checkbox"><div class="legend-patch" id="lp-fs-4"></div>Jan-Jun 2023</input></br>
+<div class="split-line"></div>
+<input type="checkbox" class="main-check-box" id="bores-checkbox"><div class="legend-patch-point" id="lp-bores"></div>Bores</input></br>
+<input type="checkbox" class="main-check-box" id="properties-checkbox"><div class="legend-patch" id="lp-properties"></div>Pastoral Properties</input></br>
+<input type="checkbox" class="main-check-box" id="districts-checkbox"><div class="legend-patch" id="lp-districts"></div>District Boundaries</input></br>
+<input type="checkbox" class="main-check-box" id="land-types-checkbox">Land Types</input><div class="legend-arrow" id="expand-land-types"><span class="lt-tooltip">Expand</span></div></br>
+<div class="land-types-legend-container-invisible" id="land-types-legend">
+<div class="lt-node" id="alluvial-floodplains"></div>Alluvial floodplains</br>
+<div class="lt-node" id="basalt-hills"></div>Basalt hills</br>
+<div class="lt-node" id="basalt-plains-rises"></div>Basalt plains & rises</br>
+<div class="lt-node" id="clay-plains"></div>Clay plains</br>
+<div class="lt-node" id="coastal-dunes"></div>Coastal dunes</br>
+<div class="lt-node" id="coastal-floodplains"></div>Coastal floodplains</br>
+<div class="lt-node" id="desert-dunefields"></div>Desert dunefields</br>
+<div class="lt-node" id="desert-sandplains"></div>Desert sandplains</br>
+<div class="lt-node" id="elevated-plateaux-surfaces"></div>Elevated plateaux surfaces</br>
+<div class="lt-node" id="granite-hills"></div>Granite hills</br>
+<div class="lt-node" id="granite-plains-rises"></div>Granite plains & rises</br>
+<div class="lt-node" id="granite-ranges"></div>Granite ranges</br>
+<div class="lt-node" id="lateritic-plains-rises"></div>Lateritic plains & rises</br>
+<div class="lt-node" id="lateritic-plateaux"></div>Lateritic plateaux</br>
+<div class="lt-node" id="limestone-hills"></div>Limestone hills</br>
+<div class="lt-node" id="limestone-plains-rises"></div>Limestone plains & rises</br>
+<div class="lt-node" id="rugged-sandstone-plateaux"></div>Rugged sandstone plateaux</br>
+<div class="lt-node" id="salt-pans"></div>Salt pans</br>
+<div class="lt-node" id="sandstone-hills"></div>Sandstone hills</br>
+<div class="lt-node" id="sandstone-plains-rises"></div>Sandstone plains & rises</br>
+<div class="lt-node" id="sandstone-ranges"></div>Sandstone ranges</br>
+<div class="lt-node" id="tidal-flats"></div>Tidal flats</br>
+</div>
+<div class="split-line"></div>
+<input type="checkbox" class="main-check-box" id="tsdm-checkbox">TSDM Oct 1st 2024</input></br>
+<img src="tsdm_legend.JPG" id="tsdm-legend"></img>
+<div class="split-line"></div>
+<form id="basemap-rb-form">
+<input type="radio" id="aus-topo-rb" name="basemap" value="aus-topo">AusTopo 250K</input></br>
+<input type="radio" id="sat-rb" name="basemap" value="imagery">ESRI World Imagery</input></br>
+<input type="radio" id="osm-rb" name="basemap" value="osm">Open Street Map</input></br>
+<input type="radio" id="open-topo-rb" name="basemap" value="open-topo">Open Topo</input></br>
+</form>
+<div class="split-line"></div>
+<div id="district-summary">
+<!--label for="district-cb">District:</label-->
+<select id="district-cb" name="district-cb">
+<option value="Barkly">Barkly</option>
+<option value="Darwin">Darwin</option>
+<option value="Gulf">Gulf</option>
+<option value="Katherine">Katherine</option>
+<option value="Northern Alice Springs">Northern Alice Springs</option>
+<option value="Plenty">Plenty</option>
+<option value="Roper">Roper</option>
+<option value="Southern Alice Springs">Southern Alice Springs</option>
+<option value="Sturt Plateau">Sturt Plateau</option>
+<option value="Tennant Creek">Tennant Creek</option>
+<option value="Victoria River">Victoria River</option>
+</select>
+<img src="summary-icon.png" class="district-summary-icon" id="summary-icon"><span class="summary-tooltip">District Summary</span></img>
+</div>
+
+<div class="split-line"></div>
+<div id="property_search">
+<select id="property-cb" name="property-cb">
+<!--option value="1">Adder</option>
+<option value="2">Alexandria</option>
+<option value="3">Alroy Downs</option-->
+</select>
+<img src="zoom-icon.jpg" class="zoom-property-icon" id="zoom-icon"><span class="zoom-tooltip">Zoom to</span></img>
+</div>
+
+</div>
+
+<!-- Summary Modal -->
+<div id="summary-modal" class="main-modal">
+<!-- Modal content -->
+<div class="modal-content">
+<span class="close">&times;</span>
+<div id="district-info"></div>
+</div>
+</div>
+
+</body>
+</html>
+
+<script>
+// prop_id variable will be set equal to fid of property polygon when a property is clicked
+var prop_id;
+
+var options = {
+	center: [-19.0, 133.0],
+	zoomSnap: 0.1,
+	zoom: 6.5
+};
+
+var pMap = L.map('pastoral-map', options);
+
+//////////////////////////PRELOAD DISTRICT IMAGES///////////////////////
+var images = [];
+
+preload(
+    "district_img/Barkly.jpg",
+    "district_img/Darwin.jpg",
+    "district_img/Gulf.jpg",
+    "district_img/Katherine.jpg",
+    "district_img/Northern Alice Springs.jpg",
+    "district_img/Plenty.jpg",
+    "district_img/Roper.jpg",
+    "district_img/Southern Alice Springs.jpg",
+    "district_img/Sturt Plateau.jpg",
+    "district_img/Tennant Creek.jpg",
+    "district_img/Victoria River.jpg"
+)
+
+function preload() {
+	for (var i = 0; i < arguments.length; i++) {
+		images[i] = new Image();
+		images[i].src = preload.arguments[i];
+	}
+}
+
+/////////////////////EXPAND/COLLAPSE LAND TYPES LEGEND//////////////////
+var legend_arrow = document.getElementsByClassName("legend-arrow")[0];
+
+legend_arrow.addEventListener("click", legendArrowClicked);
+
+function legendArrowClicked(){
+	if (legend_arrow.id == "expand-land-types"){
+		legend_arrow.id = "collapse-land-types";
+		document.getElementsByClassName("land-types-legend-container-invisible")[0].className = "land-types-legend-container-visible";
+		document.getElementsByClassName("lt-tooltip")[0].innerHTML = "Collapse";
+	}
+	else if (legend_arrow.id == "collapse-land-types"){
+		legend_arrow.id = "expand-land-types";
+		document.getElementsByClassName("land-types-legend-container-visible")[0].className = "land-types-legend-container-invisible";
+		document.getElementsByClassName("lt-tooltip")[0].innerHTML = "Expand";
+	}
+}
+
+//////////////////////FIRESCAR CHECKBOXES///////////////////////////////
+var parent_checkbox = document.getElementById("parent-checkbox");
+var fs_late_24_checkbox = document.getElementById("fs-late-24-checkbox");
+var fs_early_24_checkbox = document.getElementById("fs-early-24-checkbox");
+var fs_late_23_checkbox = document.getElementById("fs-late-23-checkbox");
+var fs_early_23_checkbox = document.getElementById("fs-early-23-checkbox");
+////////////////////Set all checkboxes checked////////////////////////////
+parent_checkbox.checked = true;
+fs_late_24_checkbox.checked = true;
+fs_early_24_checkbox.checked = false;
+fs_late_23_checkbox.checked = false;
+fs_early_23_checkbox.checked = false;
+
+parent_checkbox.addEventListener('change', parentCheckboxToggled);
+fs_late_24_checkbox.addEventListener('change', fsLate24Toggled);
+fs_early_24_checkbox.addEventListener('change', fsEarly24Toggled);
+fs_late_23_checkbox.addEventListener('change', fsLate23Toggled);
+fs_early_23_checkbox.addEventListener('change', fsEarly23Toggled);
+
+////////////////////////LAYER CHECKBOXES//////////////////////////////////
+var bores_checkbox = document.getElementById("bores-checkbox");
+var properties_checkbox = document.getElementById("properties-checkbox");
+var districts_checkbox = document.getElementById("districts-checkbox");
+var land_types_checkbox = document.getElementById("land-types-checkbox");
+bores_checkbox.checked = false;
+properties_checkbox.checked = true;
+districts_checkbox.checked = true;
+land_types_checkbox.checked = false;
+////////////////
+bores_checkbox.addEventListener("change", boresToggled);
+properties_checkbox.addEventListener("change", propertiesToggled);
+districts_checkbox.addEventListener("change", districtsToggled);
+land_types_checkbox.addEventListener("change", landTypesToggled);
+
+///////////////////////////TSDM CHECKBOX//////////////////////////////////
+var tsdm_checkbox = document.getElementById("tsdm-checkbox");
+tsdm_checkbox.checked = false;
+tsdm_checkbox.addEventListener("change", tsdmToggled);
+
+///////////////////////BASEMAP RADIO BUTTONS//////////////////////////////
+aus_topo_rb = document.getElementById("aus-topo-rb");
+sat_rb = document.getElementById("sat-rb");
+osm_rb = document.getElementById("osm-rb");
+open_topo_rb = document.getElementById("open-topo-rb");
+/////////////////////////////////////////////////////////////////////////
+aus_topo_rb.checked = true;
+sat_rb.checked = false;
+osm_rb.checked = false;
+open_topo_rb.checked = false;	
+basemap_rb_form = document.getElementById("basemap-rb-form");
+basemap_rb_form.addEventListener("change", radiosToggled);
+
+/////////////////BASEMAP LAYERS AND CONTROLS///////////////////////
+var otm_attribution = "map data: © <a href='https://openstreetmap.org/copyright'>OpenStreetMap</a> contributors, <a href='http://viewfinderpanoramas.org'>SRTM</a> | map style: © <a href='https://opentopomap.org'>OpenTopoMap</a> (<a href='https://creativecommons.org/licenses/by-sa/3.0/'>CC-BY-SA</a>)"
+
+var otm_basemap = L.tileLayer('https://tile.opentopomap.org/{z}/{x}/{y}.png', {
+	attribution: otm_attribution
+})
+
+otm_basemap.options.maxZoom = 19;
+
+var osm_attribution = '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> Contributors'
+
+var osm_basemap = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+	attribution: osm_attribution
+});
+
+osm_basemap.options.maxZoom = 19;
+
+var esri_imagery_basemap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+	attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+});
+
+esri_imagery_basemap.options.maxZoom = 19;
+
+var aus_topo_attribution = 'Esri, USGS | © Commonwealth of Australia (Geoscience Australia) 2016. Creative Commons Attribution 4.0 International Licence. | Northern Territory Government, Esri, HERE, Garmin, Foursquare, FAO, METI/NASA, USGS'
+
+var aus_topo_basemap = L.tileLayer('https://services.ga.gov.au/gis/rest/services/Topographic_Base_Map/MapServer/tile/{z}/{y}/{x}', {
+	attribution: aus_topo_attribution
+});
+
+aus_topo_basemap.options.maxZoom = 12;
+
+aus_topo_basemap.addTo(pMap);
+
+const bms = [aus_topo_basemap, esri_imagery_basemap, osm_basemap, otm_basemap];
+
+function radiosToggled(){
+	var current_basemap;
+	for (i=0; i < bms.length; i++){if (pMap.hasLayer(bms[i])){current_basemap = bms[i];}}
+	current_basemap.removeFrom(pMap);
+	if (aus_topo_rb.checked){aus_topo_basemap.addTo(pMap);}
+	else if (sat_rb.checked){esri_imagery_basemap.addTo(pMap);}
+	else if (osm_rb.checked){osm_basemap.addTo(pMap);}
+	else {otm_basemap.addTo(pMap);}
+}
+
+///////////////////TSDM RASTER LAYER////////////////////////////
+var tsdm_bbox = [[-25.975, 129.025], [-10.925, 137.975]];
+var tsdm = L.imageOverlay('tsdm_oct_24.png', tsdm_bbox);
+//tsdm.addTo(pMap);
+
+function tsdmToggled(){
+	if (tsdm_checkbox.checked){tsdm.addTo(pMap);}
+	else {tsdm.removeFrom(pMap);}
+}
+
+/////////////////OTHER VECTOR LAYERS AND CONTROLS///////////////////////
+var nt = L.geoJSON(ntPolygon, {
+	color: 'black',
+	fillColor: 'grey',
+	weight: 1.5,
+	opacity: 1,
+	fillOpacity: 0.0
+});
+
+var districts = L.geoJSON(pastoralDistricts, {
+	color: '#180870',
+	fillColor: '',
+	weight: 2.5,
+	opacity: 1,
+	fillOpacity: 0
+});
+
+var land_types = L.geoJSON(landTypes, {
+	style: landTypeStyleNoOutline,
+});
+
+var properties = L.geoJSON(propertyStats, {
+	style: propertyStyle,
+	onEachFeature: onPropertyFeature
+});
+
+var bores = L.geoJSON(bores, {pointToLayer: boreStyle});
+
+nt.addTo(pMap);
+districts.addTo(pMap);
+properties.addTo(pMap);
+
+function boresToggled(){
+	if (! bores_checkbox.checked){bores.removeFrom(pMap);}
+	else if (bores_checkbox.checked){bores.addTo(pMap);}
+	sortLayerOrder();
+}
+
+function propertiesToggled(){
+	if (! properties_checkbox.checked){properties.removeFrom(pMap);}
+	else if (properties_checkbox.checked){properties.addTo(pMap);}
+	sortLayerOrder();
+}
+
+function districtsToggled(){
+	if (! districts_checkbox.checked){districts.removeFrom(pMap);}
+	else if (districts_checkbox.checked){districts.addTo(pMap);}
+	sortLayerOrder();
+}
+
+function landTypesToggled(){
+	if (! land_types_checkbox.checked){land_types.removeFrom(pMap);}
+	else if (land_types_checkbox.checked){land_types.addTo(pMap);}
+	sortLayerOrder();
+}
+
+////////////FIRESCAR LAYERS AND CONTROLS//////////////////////////////////////////
+var early_23_firescars = L.geoJSON(fsEarly23, {style: early23FirescarStyle});
+var late_23_firescars = L.geoJSON(fsLate23, {style: late23FirescarStyle});
+var early_24_firescars = L.geoJSON(fsEarly24, {style: early24FirescarStyle});
+var late_24_firescars = L.geoJSON(fsLate24, {style: late24FirescarStyle});
+
+//early_23_firescars.addTo(pMap);
+//late_23_firescars.addTo(pMap);
+//early_24_firescars.addTo(pMap);
+late_24_firescars.addTo(pMap);
+
+function parentCheckboxToggled(){
+	if (parent_checkbox.checked){
+		fs_late_24_checkbox.disabled = false;
+		if (! pMap.hasLayer(late_24_firescars) && fs_late_24_checkbox.checked){late_24_firescars.addTo(pMap);}
+		fs_early_24_checkbox.disabled = false;
+		if (! pMap.hasLayer(early_24_firescars) && fs_early_24_checkbox.checked){early_24_firescars.addTo(pMap);}
+		fs_late_23_checkbox.disabled = false;
+		if (! pMap.hasLayer(late_23_firescars) && fs_late_23_checkbox.checked){late_23_firescars.addTo(pMap);}
+		fs_early_23_checkbox.disabled = false;
+		if (! pMap.hasLayer(early_23_firescars) && fs_early_23_checkbox.checked){early_23_firescars.addTo(pMap);}
+	}
+	else {
+		fs_late_24_checkbox.disabled = true;
+		if (pMap.hasLayer(late_24_firescars)){late_24_firescars.removeFrom(pMap);}
+		fs_early_24_checkbox.disabled = true;
+		if (pMap.hasLayer(early_24_firescars)){early_24_firescars.removeFrom(pMap);}
+		fs_late_23_checkbox.disabled = true;
+		if (pMap.hasLayer(late_23_firescars)){late_23_firescars.removeFrom(pMap);}
+		fs_early_23_checkbox.disabled = true;
+		if (pMap.hasLayer(early_23_firescars)){early_23_firescars.removeFrom(pMap);}
+	}
+	sortLayerOrder();
+}
+
+
+function fsLate24Toggled(){
+	if (fs_late_24_checkbox.checked){
+		if (! pMap.hasLayer(late_24_firescars)){late_24_firescars.addTo(pMap);}
+	}
+	else {
+		if (pMap.hasLayer(late_24_firescars)){late_24_firescars.removeFrom(pMap);}
+	}
+	sortLayerOrder();
+}
+
+function fsEarly24Toggled(){
+	if (fs_early_24_checkbox.checked){
+		if (! pMap.hasLayer(early_24_firescars)){early_24_firescars.addTo(pMap);}
+	}
+	else {
+		if (pMap.hasLayer(early_24_firescars)){early_24_firescars.removeFrom(pMap);}
+	}
+	sortLayerOrder();
+}
+
+function fsLate23Toggled(){
+	if (fs_late_23_checkbox.checked){
+		if (! pMap.hasLayer(late_23_firescars)){late_23_firescars.addTo(pMap);}
+	}
+	else {
+		if (pMap.hasLayer(late_23_firescars)){late_23_firescars.removeFrom(pMap);}
+	}
+	sortLayerOrder();
+}
+
+function fsEarly23Toggled(){
+	if (fs_early_23_checkbox.checked){
+		if (! pMap.hasLayer(early_23_firescars)){early_23_firescars.addTo(pMap);}
+	}
+	else {
+		if (pMap.hasLayer(early_23_firescars)){early_23_firescars.removeFrom(pMap);}
+	}
+	sortLayerOrder();
+}
+////////////////////////END FIRESCAR CONTROLS///////////////////////////////////////
+
+function sortLayerOrder(){
+	if (pMap.hasLayer(land_types)){land_types.bringToFront();}
+	if (pMap.hasLayer(districts)){districts.bringToFront();}
+	if (pMap.hasLayer(properties)){properties.bringToFront();}
+	if (pMap.hasLayer(early_23_firescars)){early_23_firescars.bringToFront();}
+	if (pMap.hasLayer(late_23_firescars)){late_23_firescars.bringToFront();}
+	if (pMap.hasLayer(early_24_firescars)){early_24_firescars.bringToFront();}
+	if (pMap.hasLayer(late_24_firescars)){late_24_firescars.bringToFront();}
+	if (pMap.hasLayer(bores)){bores.bringToFront();}
+}
+
+pMap.addEventListener('zoom', function(){
+	if (pMap.hasLayer(land_types)){
+		if (pMap.getZoom() > 0 && pMap.getZoom() < 10){
+			land_types.setStyle(landTypeStyleNoOutline);
+		}
+		else{
+			land_types.setStyle(landTypeStyleOutline);
+		}
+	}
+});
+
+/////////////////////////////////LAYER STYLES////////////////////////////////////
+function boreStyle(feature, latlng){
+	var bore_name = feature.properties.LABEL;
+	//var insp_date = feature.properties.DATE_INSP;
+
+	var marker = L.circleMarker(latlng, {
+	radius: 2,
+	color: "black",
+	weight: 1,
+	opacity: 1,
+	fillColor: "#396dfd",
+	fillOpacity: 1,
+	});
+	
+	var tooltipContent = "<p><b>Bore Name: </b>"+bore_name+"</p>";
+	marker.bindTooltip(tooltipContent).openTooltip();
+	
+	return marker;
+}
+
+function early24FirescarStyle(){
+	return {
+	color: '#ffe207',
+	fillColor: '#ffff9f',
+	weight: 1.2,
+	opacity: 1,
+	fillOpacity: 0.4	
+	};
+}
+
+function late24FirescarStyle(){
+	return {
+	color: '#ff7f00',
+	fillColor: '#fdbf6f',
+	weight: 1.2,
+	opacity: 1,
+	fillOpacity: 0.4	
+	};
+}
+
+function early23FirescarStyle(){
+	return {
+	color: '#eb7bff',
+	fillColor: '#ebd1ff',
+	weight: 1.2,
+	opacity: 1,
+	fillOpacity: 0.4	
+	};
+}
+
+function late23FirescarStyle(){
+	return {
+	color: '#fc03b1',
+	fillColor: '#fea0d2',
+	weight: 1.2,
+	opacity: 1,
+	fillOpacity: 0.4	
+	};
+}
+
+function landTypeStyleNoOutline(feature){
+	if (feature.properties.CLASS == 'alluvial floodplains'){return {color: '#d4d487', fillColor: '#d4d487', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'basalt hills'){return {color: '#adffd6', fillColor: '#adffd6', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'basalt plains and rises'){return {color: '#d1ffe8', fillColor: '#d1ffe8', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'clay plains'){return {color: '#f5f5dc', fillColor: '#f5f5dc', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'coastal dunes'){return {color: '#c3a9f5', fillColor: '#c3a9f5', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'coastal floodplains'){return {color: '#e6ffe6', fillColor: '#e6ffe6', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'desert dunefields'){return {color: '#ffe7ab', fillColor: '#ffe7ab', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'desert sandplains'){return {color: '#ffffbf', fillColor: '#ffffbf', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'elevated plateaux surfaces'){return {color: '#f5bfd3', fillColor: '#f5bfd3', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'granite hills'){return {color: '#d2f0ff', fillColor: '#d2f0ff', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'granite plains and rises'){return {color: '#f0f8ff', fillColor: '#f0f8ff', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'granite ranges'){return {color: '#b3e3ff', fillColor: '#b3e3ff', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'lateritic plains and rises'){return {color: '#e8d699', fillColor: '#e8d699', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'lateritic plateaux'){return {color: '#d9b596', fillColor: '#d9b596', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'limestone hills'){return {color: '#e6bef7', fillColor: '#e6bef7', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'limestone plains and rises'){return {color: '#f7e6ff', fillColor: '#f7e6ff', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'rugged quartz sandstone plateaux and hills'){return {color: '#ffb570', fillColor: '#ffb570', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'salt pans'){return {color: '#cccccc', fillColor: '#cccccc', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'sandstone hills'){return {color: '#ffcdb8', fillColor: '#ffcdb8', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'sandstone plains and rises'){return {color: '#faf0e6', fillColor: '#faf0e6', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'sandstone ranges'){return {color: '#ffa59e', fillColor: '#ffa59e', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'tidal flats'){return {color: '#b8d4a5', fillColor: '#b8d4a5', weight: 1, opacity: 1, fillOpacity: 1}}
+}
+
+function landTypeStyleOutline(feature){
+	if (feature.properties.CLASS == 'alluvial floodplains'){return {color: '#bebebe', fillColor: '#d4d487', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'basalt hills'){return {color: '#bebebe', fillColor: '#adffd6', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'basalt plains and rises'){return {color: '#bebebe', fillColor: '#d1ffe8', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'clay plains'){return {color: '#bebebe', fillColor: '#f5f5dc', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'coastal dunes'){return {color: '#bebebe', fillColor: '#c3a9f5', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'coastal floodplains'){return {color: '#bebebe', fillColor: '#e6ffe6', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'desert dunefields'){return {color: '#bebebe', fillColor: '#ffe7ab', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'desert sandplains'){return {color: '#bebebe', fillColor: '#ffffbf', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'elevated plateaux surfaces'){return {color: '#bebebe', fillColor: '#f5bfd3', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'granite hills'){return {color: '#bebebe', fillColor: '#d2f0ff', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'granite plains and rises'){return {color: '#bebebe', fillColor: '#f0f8ff', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'granite ranges'){return {color: '#bebebe', fillColor: '#b3e3ff', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'lateritic plains and rises'){return {color: '#bebebe', fillColor: '#e8d699', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'lateritic plateaux'){return {color: '#bebebe', fillColor: '#d9b596', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'limestone hills'){return {color: '#bebebe', fillColor: '#e6bef7', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'limestone plains and rises'){return {color: '#bebebe', fillColor: '#f7e6ff', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'rugged quartz sandstone plateaux and hills'){return {color: '#bebebe', fillColor: '#ffb570', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'salt pans'){return {color: '#bebebe', fillColor: '#cccccc', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'sandstone hills'){return {color: '#bebebe', fillColor: '#ffcdb8', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'sandstone plains and rises'){return {color: '#bebebe', fillColor: '#faf0e6', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'sandstone ranges'){return {color: '#bebebe', fillColor: '#ffa59e', weight: 1, opacity: 1, fillOpacity: 1}}
+	if (feature.properties.CLASS == 'tidal flats'){return {color: '#bebebe', fillColor: '#b8d4a5', weight: 1, opacity: 1, fillOpacity: 1}}
+}
+
+function propertyStyle(feature){
+	return {
+	color: 'brown',
+	fillColor: '0,0,0',
+	weight: 1,
+	opacity: 1,
+	fillOpacity: 0.2
+	}
+}
+///////////////////////////END LAYER STYLES////////////////////////////////////////
+
+/////////////////LOGIC TO ADD PROPERTIES TO SELECT////////////////////////////////
+/*<option value="1">Adder</option>*/
+/*options_content += "<option value='"+v+"'>"+k+"</option>";*/
+var property_cb = document.getElementById("property-cb");
+var zoom_icon = document.getElementById("zoom-icon");
+zoom_icon.addEventListener("click", zoomIconClicked);
+
+function loadPropertySelect(){
+	var property_names = {};
+	var options_content = "";
+	properties.eachLayer(function(layer){
+		prop_fid = layer.feature.properties.fid;
+		prop_name = layer.feature.properties.NAME;
+		property_names[prop_name] = prop_fid;
+	})
+	var prop_names = Object.keys(property_names);
+	prop_names.sort();
+	for (var i=0; i<prop_names.length; i++){
+		options_content += "<option value='"+property_names[prop_names[i]]+"'>"+prop_names[i]+"</option>";
+	}
+	property_cb.innerHTML = options_content;
+}
+
+loadPropertySelect();
+
+function zoomIconClicked(){
+	zoomToFeature(property_cb.value);
+}
+//////////////////////////////////////////////////////////////////////////////////
+
+function highlightFeature(e) {
+	var layer = e.target;
+
+	layer.setStyle({
+			weight: 3,
+			color: '#666',
+			fillOpacity: 0
+	});
+	
+	if (!L.Browser.opera && !L.Browser.edge) {
+			layer.bringToFront();
+	}
+}
+
+function resetStyle(e) {
+    properties.resetStyle(e.target);
+}
+
+pMap.on("click", function (event) {
+	//alert(JSON.stringify(turf));
+	var showPopup = false;
+	var popupContent = "<p>";
+
+	lat = event.latlng.lat;
+	lon = event.latlng.lng;
+	
+	var propertyId = -1;
+
+	properties.eachLayer(function(layer) {
+		clicked_point = turf.point([lon, lat]);
+		inside = turf.booleanWithin(clicked_point, layer.toGeoJSON());
+		if (inside && pMap.hasLayer(layer)){
+			showPopup = true;
+			var name = layer.feature.properties.NAME;
+			var area = layer.feature.properties.AREA_KM2;
+			var district = layer.feature.properties.DISTRICT;
+			var area_burnt_early_23 = layer.feature.properties.area_burnt_early_23;
+			var pcnt_burnt_early_23 = layer.feature.properties.pcnt_burnt_early_23;
+			//
+			var area_burnt_late_23 = layer.feature.properties.area_burnt_late_23;
+			var pcnt_burnt_late_23 = layer.feature.properties.pcnt_burnt_late_23;
+			//
+			var area_burnt_early_24 = layer.feature.properties.area_burnt_early_24;
+			var pcnt_burnt_early_24 = layer.feature.properties.pcnt_burnt_early_24;
+			//
+			var area_burnt_late_24 = layer.feature.properties.area_burnt_late_24;
+			var pcnt_burnt_late_24 = layer.feature.properties.pcnt_burnt_late_24;
+			
+			//var fid = layer.feature.properties.fid;
+			propertyId = layer.feature.properties.fid;
+			
+			popupContent += "<b>Property Name: </b>"+name+"<br>";
+			popupContent += "<b>Area (km2): </b>"+area+"<br>";
+			popupContent += "<b>District: </b>"+district+"<br>";
+			popupContent += "<div>";
+			popupContent += "<br><b>Area & percentage of property burnt:</b><br>";
+			popupContent += "<table>";
+			popupContent += "<tr><td class='e-23'><b>Jan-Jun 2023</b></td><td class='l-23'><b>Jul-Dec 2023</b></td><td class='e-24'><b>Jan-Jun 2024</b></td><td class='l-24'><b>Jul 1-Oct 8 2024</b></td></tr>";
+			popupContent += "<tr><td class='e-23'>"+area_burnt_early_23+" km2</td><td class='l-23'>"+area_burnt_late_23+" km2</td><td class='e-24'>"+area_burnt_early_24+" km2</td><td class='l-24'>"+area_burnt_late_24+" km2</td></tr>";
+			popupContent += "<tr><td class='e-23'>"+pcnt_burnt_early_23+"%</td><td class='l-23'>"+pcnt_burnt_late_23+"%</td><td class='e-24'>"+pcnt_burnt_early_24+"%</td><td class='l-24'>"+pcnt_burnt_late_24+"%</td></tr>";
+			popupContent += "</table>";
+			popupContent += "Firescar Data: <a href='https://firenorth.org.au/nafi3/'>https://firenorth.org.au/nafi3/</a>";
+			popupContent += "</div>";
+		}
+	popupContent += "</p>";
+	})	
+	
+	land_types.eachLayer(function(layer) {
+		clicked_point = turf.point([lon, lat]);
+		inside = turf.booleanWithin(clicked_point, layer.toGeoJSON());
+		if (inside && pMap.hasLayer(layer)){
+			//alert(layer.feature.properties.CLASS);}
+			showPopup = true;
+			var land_class = layer.feature.properties.CLASS;
+			var veg_desc = layer.feature.properties.VEGETATION;
+			popupContent += "<div id='land-type-div'>";
+			popupContent += "<b>Clicked land class: </b>"+land_class+"</p>";
+			popupContent += "<b>Vegetation: </b>"+veg_desc+"</p>";
+			popupContent += "</div>";
+		}	
+	})
+	if (propertyId != -1){popupContent += "<button onclick=zoomToFeature("+propertyId+")>Zoom to Property</button><br>";}
+	if(showPopup){L.popup().setLatLng([lat, lon]).setContent(popupContent).openOn(pMap);}
+});
+
+//Function called once on construction of properties L.GeoJSON object (in onEachFeature method)
+function onPropertyFeature(feature, layer) {
+	var name = feature.properties.NAME;
+	layer.bindTooltip(name);
+	layer.on({
+		mouseover: highlightFeature,
+		mouseout: resetStyle
+	})
+}
+
+function zoomToFeature(id) {
+	//id is fid; here we update the prop_id variable
+	prop_id = id;
+  var property = L.geoJSON(propertyStats, {
+		filter: filterProperties
+	})
+	//alert(property);
+	pMap.fitBounds(property.getBounds());
+}
+
+function filterProperties(feature) {
+	//alert(feature);
+	if (feature.properties.fid == prop_id){return true};
+	return false;
+}
+
+/////////////////////DISTRICT SUMMARY MODAL////////////////////////
+var district_cb = document.getElementById("district-cb");
+var summary_btn = document.getElementById("summary-icon");
+var info = document.getElementById("district-info");
+	
+district_cb.value = "Barkly";
+
+summary_btn.addEventListener("click", showModal);
+
+// Get the modal
+var summary_modal = document.getElementById("summary-modal");
+
+// Get the <span> element that closes the modal
+var span = document.getElementsByClassName("close")[0];
+
+// When the user clicks on the button, open the modal
+function showModal() {
+	//alert("Click");
+	var selected_district = district_cb.value;
+	var district_info = "";
+	district_info += "<H3>"+selected_district+" District Summary</H3>";
+	district_info += "<image class='district-map' src='district_img/"+selected_district+".jpg'></image>";
+	district_info += "At 8 October 2024</br>";
+	district_info += "<div class='split-line'></div>";
+	district_info += "<div class='district-info'>";
+	
+	districts.eachLayer(function(layer){
+		if (selected_district == layer.feature.properties.DISTRICT){		
+			var district_area_burnt_early_23 = layer.feature.properties.area_burnt_early_23;
+			var district_pcnt_burnt_early_23 = layer.feature.properties.pcnt_burnt_early_23;
+			//
+			var district_area_burnt_late_23 = layer.feature.properties.area_burnt_late_23;
+			var district_pcnt_burnt_late_23 = layer.feature.properties.pcnt_burnt_late_23;
+			//
+			var district_area_burnt_early_24 = layer.feature.properties.area_burnt_early_24;
+			var district_pcnt_burnt_early_24 = layer.feature.properties.pcnt_burnt_early_24;
+			//
+			var district_area_burnt_late_24 = layer.feature.properties.area_burnt_late_24;
+			var district_pcnt_burnt_late_24 = layer.feature.properties.pcnt_burnt_late_24;
+			
+			district_info += "<b>District Area: </b>"+layer.feature.properties.AREA_KM2+" km2</br>";
+			district_info += "<br><b>Mean TSDM: </b>"+layer.feature.properties.MEAN+" kg/ha</br>";
+			district_info += "<b>Median TSDM: </b>"+layer.feature.properties.MEDIAN+" kg/ha</br>";
+			district_info += "<b>Minimum TSDM: </b>"+layer.feature.properties.MIN+" kg/ha</br>";
+			district_info += "<b>Maximum TSDM: </b>"+layer.feature.properties.MAX+" kg/ha</br>";
+			district_info += "<br><b>Area & percentage of district burnt:</b></br>";
+			district_info += "<br><b>*Note</b>- figures are for entire district (all land tenures)</br>";
+			district_info += "<table>";
+			district_info += "<tr><td class='e-23'><b>Jan-Jun 2023</b></td><td class='l-23'><b>Jul-Dec 2023</b></td><td class='e-24'><b>Jan-Jun 2024</b></td><td class='l-24'><b>Jul 1-Oct 8 2024</b></td></tr>";
+			district_info += "<tr><td class='e-23'>"+district_area_burnt_early_23+" km2</td><td class='l-23'>"+district_area_burnt_late_23+" km2</td><td class='e-24'>"+district_area_burnt_early_24+" km2</td><td class='l-24'>"+district_area_burnt_late_24+" km2</td></tr>";
+			district_info += "<tr><td class='e-23'>"+district_pcnt_burnt_early_23+"%</td><td class='l-23'>"+district_pcnt_burnt_late_23+"%</td><td class='e-24'>"+district_pcnt_burnt_early_24+"%</td><td class='l-24'>"+district_pcnt_burnt_late_24+"%</td></tr>";
+			district_info += "</table>";
+		}
+	})
+	district_info += "Pasture Data: <a href='https://www.longpaddock.qld.gov.au/aussiegrass/'>https://www.longpaddock.qld.gov.au/aussiegrass/</a></br>";
+	district_info += "Firescar Data: <a href='https://firenorth.org.au/nafi3/'>https://firenorth.org.au/nafi3/</a></br>";
+	district_info += "<br><button onclick=zoomToDistrict()>Zoom to District</button></br>";
+	district_info += "</div>";
+	info.innerHTML = district_info;
+	summary_modal.style.display = "block";
+	//zoomToDistrict();
+}
+
+// When the user clicks on <span> (x), close the modal
+span.onclick = function() {
+  summary_modal.style.display = "none";
+}
+
+// When the user clicks anywhere outside of the modal, close it
+window.onclick = function(event) {
+  if (event.target == summary_modal) {
+    summary_modal.style.display = "none";
+  }
+}
+
+function zoomToDistrict() {
+	var current_district = L.geoJSON(pastoralDistricts, {
+		filter: filterDistricts
+	})
+	pMap.fitBounds(current_district.getBounds());
+}
+
+function filterDistricts(feature) {
+	if (feature.properties.DISTRICT == district_cb.value){return true};
+	return false;
+}
+</script>
+
+<style>
+body{
+	margin: 0;
+	background-color: white;
+	padding: 0;
+}
+
+div.leaflet-popup-content {width:auto !important;}
+
+table{
+	width: 95%;
+	margin-top: 10;
+	margin-bottom: 10;
+}
+
+table, tr, td {
+	border: 1px solid black;
+	border-collapse: collapse;
+	padding: 5px;
+}
+
+td{
+	text-align: center;
+	background-color: white;
+	white-space: nowrap;
+	font-size: 12px;
+}
+
+td.e-23{
+	background-color: #ebd1ff;
+}
+td.l-23{
+	background-color: #fea0d2;
+}
+td.e-24{
+	background-color: #ffff9f;
+}
+td.l-24{
+	background-color: #fdbf6f;
+}
+
+#land-type-div{
+	min-width: 350;
+}
+
+.inset{
+	position: absolute;
+	top: 80;
+	left: 10;
+	height: auto;
+	max-height: 75%;
+	width: auto;
+	max-width: 200px;
+	background-color: white;
+	border: 1px solid black;
+	border-radius: 5px;
+	padding: 10px;
+	font-family: Arial, sans-serif;
+	font-size: 14;
+	z-index: 998;
+	overflow-x: hidden;
+	overflow-y: auto;
+}
+
+/*
+.main-check-box{
+	margin-left: 20px;
+}
+*/
+.check-box{
+	margin-left: 25px;
+}
+
+.legend-patch{
+	display: inline-block;
+	height: 12px;
+	width: 12px;
+	margin: 1px 5px 0px 5px;/*top right bottom left*/
+}
+
+.legend-patch-point{
+	display: inline-block;
+	height: 10px;
+	width: 10px;
+	border-radius: 50%;
+	margin: 2px 6px 0px 6px;/*top right bottom left*/
+}
+
+#lp-fs-1{
+	border: 1px solid #ff7f00;
+	background-color: #fdbf6f;
+}
+
+#lp-fs-2{
+	border: 1px solid #ffe207;
+	background-color: #ffff9f;
+}
+
+#lp-fs-3{
+	border: 1px solid #fc03b1;
+	background-color: #fea0d2;
+}
+
+#lp-fs-4{
+	border: 1px solid #eb7bff;
+	background-color: #ebd1ff;
+}
+
+#lp-bores{
+	background-color: #396dfd;
+	border: 1.5px solid black
+}
+#lp-properties{
+	border: 2px solid brown;	
+}
+#lp-districts{
+	border: 2.5px solid #180870;
+}
+#lp-land-types{
+	border: 1px solid black;
+}
+#collapse-land-types{
+	display: inline-block;
+	width: 0;
+	height: 0;
+	border-left: 5px solid transparent;
+	border-right: 5px solid transparent;
+	border-top: 10px solid #555;
+	margin-left: 5px;
+}
+#expand-land-types{
+	display: inline-block;
+	width: 0;
+	height: 0;
+	border-top: 5px solid transparent;
+	border-left: 10px solid #555;
+	border-bottom: 5px solid transparent;
+	margin-left: 5px;
+}
+
+/*----------------------------------------------*/
+.legend-arrow:hover .lt-tooltip{
+	visibility: visible;
+	z-index: 9999 !important;
+}
+
+.lt-tooltip{
+	visibility: hidden;
+	position: absolute;
+	top: 175px;
+	left: 120px;
+	white-space: nowrap;
+	width: auto;
+	background-color: black;
+	color: #fff;
+	text-align: center;
+	padding: 3px;
+	border-radius: 5px;
+	opacity: 0.8;
+}
+/*----------------------------------------------*/
+
+.split-line{
+	width: 100%;
+	border-bottom: 1px solid #555;
+	margin-top: 5px;
+	margin-bottom: 5px;
+}
+
+.land-types-legend-container-visible{
+	height: auto;
+	width: 100%;
+	/*background-color: red;*/
+	font-size: 12;
+}
+.land-types-legend-container-invisible{
+	display: none;
+}
+
+.lt-node{
+	display: inline-block;
+	height: 11px;
+	width: 11px;
+	margin: 0px 5px 0px 15px;
+}
+#alluvial-floodplains{background-color: #d4d487;}
+#basalt-hills{background-color: #adffd6;}
+#basalt-plains-rises{background-color: #d1ffe8;}
+#clay-plains{background-color: #f5f5dc;}
+#coastal-dunes{background-color: #c3a9f5;}
+#coastal-floodplains{background-color: #e6ffe6;}
+#desert-dunefields{background-color: #ffe7ab;}
+#desert-sandplains{background-color: #ffffbf;}
+#elevated-plateaux-surfaces{background-color: #f5bfd3;}
+#granite-hills{background-color: #d2f0ff;}
+#granite-plains-rises{background-color: #f0f8ff;}
+#granite-ranges{background-color: #b3e3ff;}
+#lateritic-plains-rises{background-color: #e8d699;}
+#lateritic-plateaux{background-color: #d9b596;}
+#limestone-hills{background-color: #e6bef7;}
+#limestone-plains-rises{background-color: #f7e6ff;}
+#rugged-sandstone-plateaux{background-color: #ffb570;}
+#salt-pans{background-color: #cccccc;}
+#sandstone-hills{background-color: #ffcdb8;}
+#sandstone-plains-rises{background-color: #faf0e6;}
+#sandstone-ranges{background-color: #ffa59e;}
+#tidal-flats{background-color: #b8d4a5;}
+
+#tsdm-legend{
+	height: 35px;
+	width: 170px;
+}
+
+#summary-icon{
+	height: 20px;
+	width: 25px;
+	margin-left: 5px;
+}
+
+#summary-icon:hover{
+	cursor: pointer;
+}
+
+
+#district-summary{
+	/*background-color: red;*/
+	display: flex;
+}
+
+.district-summary-icon:hover + .summary-tooltip{
+	visibility: visible;
+}
+	
+.summary-tooltip{
+	visibility: hidden;
+	translate: -110px -25px;
+	/*
+	position: absolute;
+	bottom: 25px;
+	right: 25px;
+	*/
+	white-space: nowrap;
+	width: auto;
+	background-color: black;
+	color: #fff;
+	text-align: center;
+	padding: 3px;
+	border-radius: 5px;
+	opacity: 0.8;
+}
+
+#zoom-icon{
+	height: 20px;
+	width: 25px;
+	margin-left: 5px;
+}
+
+#zoom-icon:hover{
+	cursor: pointer;
+}
+
+#property_search{
+	/*background-color: red;*/
+	display: flex;
+}
+
+#zoom-icon:hover + .zoom-tooltip{
+	visibility: visible;
+}
+	
+.zoom-tooltip{
+	visibility: hidden;
+	translate: -60px -25px;
+	/*
+	position: absolute;
+	bottom: 25px;
+	right: 25px;
+	*/
+	white-space: nowrap;
+	width: auto;
+	background-color: black;
+	color: #fff;
+	text-align: center;
+	padding: 3px;
+	border-radius: 5px;
+	opacity: 0.8;
+}
+
+select{
+	min-width: 160px;
+	min-height: 20px;
+}
+
+#property-cb{
+	font-size: 11;
+}
+
+/******************************************modal style************************************************/
+
+/* The Modal (background) */
+.main-modal {
+	display: none; /* Hidden by default */
+	position: fixed; /* Stay in place */
+	z-index: 9999; /* Sit on top */
+	left: 0;
+	top: 0;
+	width: 100%; /* Full width */
+	height: 100%; /* Full height */
+	overflow: auto; /* Enable scroll if needed */
+	background-color: rgb(0,0,0); /* Fallback color */
+	background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* Modal Content/Box */
+.modal-content {
+	background-color: #fefefe;
+	margin: 10% auto; /* 15% from the top and centered */
+	padding: 20px;
+	border: 1px solid #888;
+	border-radius: 10px;
+	width: 500px;
+	font-family: Arial, sans-serif;
+	font-size: 20;
+}
+
+/* The Close Button */
+.close {
+	color: #aaa;
+	float: right;
+	font-size: 28px;
+	font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+	color: black;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.district-info{
+	font-size: 16;	
+}
+
+.district-map{
+	height: 150;
+	width: 90;
+	float: right;
+}
+/***************************************end of modal style********************************************/
+
+</style>
