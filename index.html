@@ -12,10 +12,10 @@
 	<script src="property_stats.geojson" type="text/javascript"></script>
 	
 	<!--script src="pastoral_firescars.geojson" type="text/javascript"></script-->
-	<script src="fs_early_23.geojson" type="text/javascript"></script>
-	<script src="fs_late_23.geojson" type="text/javascript"></script>
 	<script src="fs_early_24.geojson" type="text/javascript"></script>
 	<script src="fs_late_24.geojson" type="text/javascript"></script>
+	<script src="fs_early_25.geojson" type="text/javascript"></script>
+	<!--script src="fs_late_25.geojson" type="text/javascript"></script-->
 	
 	<script src="pastoral_land_types.geojson" type="text/javascript"></script>
 	<script src="bores.geojson" type="text/javascript"></script>
@@ -31,10 +31,10 @@
 <div class="map" id="pastoral-map"></div>
 <div class="inset">
 <input type="checkbox" class="main-check-box" id="parent-checkbox">Fire scars (pastoral land)</input></br>
-<input type="checkbox" class="check-box" id="fs-late-24-checkbox"><div class="legend-patch" id="lp-fs-1"></div>Jul 1-Nov 4 2024</input></br>
-<input type="checkbox" class="check-box" id="fs-early-24-checkbox"><div class="legend-patch" id="lp-fs-2"></div>Jan-Jun 2024</input></br>
-<input type="checkbox" class="check-box" id="fs-late-23-checkbox"><div class="legend-patch" id="lp-fs-3"></div>Jul-Dec 2023</input></br>
-<input type="checkbox" class="check-box" id="fs-early-23-checkbox"><div class="legend-patch" id="lp-fs-4"></div>Jan-Jun 2023</input></br>
+<!--input type="checkbox" class="check-box" id="fs-late-current-checkbox"><div class="legend-patch" id="lp-fs-1"></div>Jul 1-Nov 4 2025</input></br-->
+<input type="checkbox" class="check-box" id="fs-early-current-checkbox"><div class="legend-patch" id="lp-fs-2"></div>Jan(1-17) 2025</input></br>
+<input type="checkbox" class="check-box" id="fs-late-prev-checkbox"><div class="legend-patch" id="lp-fs-3"></div>Jul-Dec 2024</input></br>
+<input type="checkbox" class="check-box" id="fs-early-prev-checkbox"><div class="legend-patch" id="lp-fs-4"></div>Jan-Jun 2024</input></br>
 <div class="split-line"></div>
 <input type="checkbox" class="main-check-box" id="bores-checkbox"><div class="legend-patch-point" id="lp-bores"></div>Bores</input></br>
 <input type="checkbox" class="main-check-box" id="properties-checkbox"><div class="legend-patch" id="lp-properties"></div>Pastoral Properties</input></br>
@@ -65,7 +65,7 @@
 <div class="lt-node" id="tidal-flats"></div>Tidal flats</br>
 </div>
 <div class="split-line"></div>
-<input type="checkbox" class="main-check-box" id="tsdm-checkbox">TSDM Nov 1st 2024</input></br>
+<input type="checkbox" class="main-check-box" id="tsdm-checkbox">TSDM Jan 1st 2025</input></br>
 <img src="tsdm_legend.JPG" id="tsdm-legend"></img>
 <div class="split-line"></div>
 <form id="basemap-rb-form">
@@ -173,22 +173,22 @@ function legendArrowClicked(){
 
 //////////////////////FIRESCAR CHECKBOXES///////////////////////////////
 var parent_checkbox = document.getElementById("parent-checkbox");
-var fs_late_24_checkbox = document.getElementById("fs-late-24-checkbox");
-var fs_early_24_checkbox = document.getElementById("fs-early-24-checkbox");
-var fs_late_23_checkbox = document.getElementById("fs-late-23-checkbox");
-var fs_early_23_checkbox = document.getElementById("fs-early-23-checkbox");
+//var fs_late_current_checkbox = document.getElementById("fs-late-current-checkbox");
+var fs_early_current_checkbox = document.getElementById("fs-early-current-checkbox");
+var fs_late_prev_checkbox = document.getElementById("fs-late-prev-checkbox");
+var fs_early_prev_checkbox = document.getElementById("fs-early-prev-checkbox");
 ////////////////////Set all checkboxes checked////////////////////////////
 parent_checkbox.checked = true;
-fs_late_24_checkbox.checked = true;
-fs_early_24_checkbox.checked = false;
-fs_late_23_checkbox.checked = false;
-fs_early_23_checkbox.checked = false;
+//fs_late_current_checkbox.checked = true;
+fs_early_current_checkbox.checked = true;
+fs_late_prev_checkbox.checked = false;
+fs_early_prev_checkbox.checked = false;
 
 parent_checkbox.addEventListener('change', parentCheckboxToggled);
-fs_late_24_checkbox.addEventListener('change', fsLate24Toggled);
-fs_early_24_checkbox.addEventListener('change', fsEarly24Toggled);
-fs_late_23_checkbox.addEventListener('change', fsLate23Toggled);
-fs_early_23_checkbox.addEventListener('change', fsEarly23Toggled);
+//fs_late_current_checkbox.addEventListener('change', fsLateCurrentToggled);
+fs_early_current_checkbox.addEventListener('change', fsEarlyCurrentToggled);
+fs_late_prev_checkbox.addEventListener('change', fsLatePreviousToggled);
+fs_early_prev_checkbox.addEventListener('change', fsEarlyPreviousToggled);
 
 ////////////////////////LAYER CHECKBOXES//////////////////////////////////
 var bores_checkbox = document.getElementById("bores-checkbox");
@@ -270,7 +270,7 @@ function radiosToggled(){
 
 ///////////////////TSDM RASTER LAYER////////////////////////////
 var tsdm_bbox = [[-25.975, 129.025], [-10.925, 137.975]];
-var tsdm = L.imageOverlay('tsdm_nov_24.png', tsdm_bbox);
+var tsdm = L.imageOverlay('tsdm_jan_25.png', tsdm_bbox);
 //tsdm.addTo(pMap);
 
 function tsdmToggled(){
@@ -335,43 +335,60 @@ function landTypesToggled(){
 }
 
 ////////////FIRESCAR LAYERS AND CONTROLS//////////////////////////////////////////
-var early_23_firescars = L.geoJSON(fsEarly23, {style: early23FirescarStyle});
-var late_23_firescars = L.geoJSON(fsLate23, {style: late23FirescarStyle});
-var early_24_firescars = L.geoJSON(fsEarly24, {style: early24FirescarStyle});
-var late_24_firescars = L.geoJSON(fsLate24, {style: late24FirescarStyle});
+var early_24_firescars = L.geoJSON(fsEarly24, {style: earlyPreviousFirescarStyle});
+var late_24_firescars = L.geoJSON(fsLate24, {style: latePreviousFirescarStyle});
+var early_25_firescars = L.geoJSON(fsEarly25, {style: earlyCurrentFirescarStyle});
+//var late_25_firescars = L.geoJSON(fsLate25, {style: lateCurrentFirescarStyle});
 
-//early_23_firescars.addTo(pMap);
-//late_23_firescars.addTo(pMap);
-//early_24_firescars.addTo(pMap);
-late_24_firescars.addTo(pMap);
+early_25_firescars.addTo(pMap);
 
 function parentCheckboxToggled(){
 	if (parent_checkbox.checked){
-		fs_late_24_checkbox.disabled = false;
-		if (! pMap.hasLayer(late_24_firescars) && fs_late_24_checkbox.checked){late_24_firescars.addTo(pMap);}
-		fs_early_24_checkbox.disabled = false;
-		if (! pMap.hasLayer(early_24_firescars) && fs_early_24_checkbox.checked){early_24_firescars.addTo(pMap);}
-		fs_late_23_checkbox.disabled = false;
-		if (! pMap.hasLayer(late_23_firescars) && fs_late_23_checkbox.checked){late_23_firescars.addTo(pMap);}
-		fs_early_23_checkbox.disabled = false;
-		if (! pMap.hasLayer(early_23_firescars) && fs_early_23_checkbox.checked){early_23_firescars.addTo(pMap);}
+		//fs_late_current_checkbox.disabled = false;
+		//if (! pMap.hasLayer(late_25_firescars) && fs_late_current_checkbox.checked){late_25_firescars.addTo(pMap);}
+		fs_early_current_checkbox.disabled = false;
+		if (! pMap.hasLayer(early_25_firescars) && fs_early_current_checkbox.checked){early_25_firescars.addTo(pMap);}
+		fs_late_prev_checkbox.disabled = false;
+		if (! pMap.hasLayer(late_24_firescars) && fs_late_prev_checkbox.checked){late_24_firescars.addTo(pMap);}
+		fs_early_prev_checkbox.disabled = false;
+		if (! pMap.hasLayer(early_24_firescars) && fs_early_prev_checkbox.checked){early_24_firescars.addTo(pMap);}
 	}
 	else {
-		fs_late_24_checkbox.disabled = true;
+		//fs_late_current_checkbox.disabled = true;
+		//if (pMap.hasLayer(late_25_firescars)){late_25_firescars.removeFrom(pMap);}
+		fs_early_current_checkbox.disabled = true;
+		if (pMap.hasLayer(early_25_firescars)){early_25_firescars.removeFrom(pMap);}
+		fs_late_prev_checkbox.disabled = true;
 		if (pMap.hasLayer(late_24_firescars)){late_24_firescars.removeFrom(pMap);}
-		fs_early_24_checkbox.disabled = true;
+		fs_early_prev_checkbox.disabled = true;
 		if (pMap.hasLayer(early_24_firescars)){early_24_firescars.removeFrom(pMap);}
-		fs_late_23_checkbox.disabled = true;
-		if (pMap.hasLayer(late_23_firescars)){late_23_firescars.removeFrom(pMap);}
-		fs_early_23_checkbox.disabled = true;
-		if (pMap.hasLayer(early_23_firescars)){early_23_firescars.removeFrom(pMap);}
 	}
 	sortLayerOrder();
 }
 
 
-function fsLate24Toggled(){
-	if (fs_late_24_checkbox.checked){
+function fsLateCurrentToggled(){
+	if (fs_late_current_checkbox.checked){
+		if (! pMap.hasLayer(late_25_firescars)){late_25_firescars.addTo(pMap);}
+	}
+	else {
+		if (pMap.hasLayer(late_25_firescars)){late_25_firescars.removeFrom(pMap);}
+	}
+	sortLayerOrder();
+}
+
+function fsEarlyCurrentToggled(){
+	if (fs_early_current_checkbox.checked){
+		if (! pMap.hasLayer(early_25_firescars)){early_25_firescars.addTo(pMap);}
+	}
+	else {
+		if (pMap.hasLayer(early_25_firescars)){early_25_firescars.removeFrom(pMap);}
+	}
+	sortLayerOrder();
+}
+
+function fsLatePreviousToggled(){
+	if (fs_late_prev_checkbox.checked){
 		if (! pMap.hasLayer(late_24_firescars)){late_24_firescars.addTo(pMap);}
 	}
 	else {
@@ -380,32 +397,12 @@ function fsLate24Toggled(){
 	sortLayerOrder();
 }
 
-function fsEarly24Toggled(){
-	if (fs_early_24_checkbox.checked){
+function fsEarlyPreviousToggled(){
+	if (fs_early_prev_checkbox.checked){
 		if (! pMap.hasLayer(early_24_firescars)){early_24_firescars.addTo(pMap);}
 	}
 	else {
 		if (pMap.hasLayer(early_24_firescars)){early_24_firescars.removeFrom(pMap);}
-	}
-	sortLayerOrder();
-}
-
-function fsLate23Toggled(){
-	if (fs_late_23_checkbox.checked){
-		if (! pMap.hasLayer(late_23_firescars)){late_23_firescars.addTo(pMap);}
-	}
-	else {
-		if (pMap.hasLayer(late_23_firescars)){late_23_firescars.removeFrom(pMap);}
-	}
-	sortLayerOrder();
-}
-
-function fsEarly23Toggled(){
-	if (fs_early_23_checkbox.checked){
-		if (! pMap.hasLayer(early_23_firescars)){early_23_firescars.addTo(pMap);}
-	}
-	else {
-		if (pMap.hasLayer(early_23_firescars)){early_23_firescars.removeFrom(pMap);}
 	}
 	sortLayerOrder();
 }
@@ -415,10 +412,10 @@ function sortLayerOrder(){
 	if (pMap.hasLayer(land_types)){land_types.bringToFront();}
 	if (pMap.hasLayer(districts)){districts.bringToFront();}
 	if (pMap.hasLayer(properties)){properties.bringToFront();}
-	if (pMap.hasLayer(early_23_firescars)){early_23_firescars.bringToFront();}
-	if (pMap.hasLayer(late_23_firescars)){late_23_firescars.bringToFront();}
 	if (pMap.hasLayer(early_24_firescars)){early_24_firescars.bringToFront();}
 	if (pMap.hasLayer(late_24_firescars)){late_24_firescars.bringToFront();}
+	if (pMap.hasLayer(early_25_firescars)){early_25_firescars.bringToFront();}
+	//if (pMap.hasLayer(late_25_firescars)){late_25_firescars.bringToFront();}
 	if (pMap.hasLayer(bores)){bores.bringToFront();}
 }
 
@@ -453,7 +450,7 @@ function boreStyle(feature, latlng){
 	return marker;
 }
 
-function early24FirescarStyle(){
+function earlyCurrentFirescarStyle(){
 	return {
 	color: '#ffe207',
 	fillColor: '#ffff9f',
@@ -463,7 +460,7 @@ function early24FirescarStyle(){
 	};
 }
 
-function late24FirescarStyle(){
+function lateCurrentFirescarStyle(){
 	return {
 	color: '#ff7f00',
 	fillColor: '#fdbf6f',
@@ -473,7 +470,7 @@ function late24FirescarStyle(){
 	};
 }
 
-function early23FirescarStyle(){
+function earlyPreviousFirescarStyle(){
 	return {
 	color: '#eb7bff',
 	fillColor: '#ebd1ff',
@@ -483,7 +480,7 @@ function early23FirescarStyle(){
 	};
 }
 
-function late23FirescarStyle(){
+function latePreviousFirescarStyle(){
 	return {
 	color: '#fc03b1',
 	fillColor: '#fea0d2',
@@ -620,17 +617,17 @@ pMap.on("click", function (event) {
 			var name = layer.feature.properties.NAME;
 			var area = layer.feature.properties.AREA_KM2;
 			var district = layer.feature.properties.DISTRICT;
-			var area_burnt_early_23 = layer.feature.properties.area_burnt_early_23;
-			var pcnt_burnt_early_23 = layer.feature.properties.pcnt_burnt_early_23;
+			var area_burnt_early_prev = layer.feature.properties.area_burnt_early_24;
+			var pcnt_burnt_early_prev = layer.feature.properties.pcnt_burnt_early_24;
 			//
-			var area_burnt_late_23 = layer.feature.properties.area_burnt_late_23;
-			var pcnt_burnt_late_23 = layer.feature.properties.pcnt_burnt_late_23;
+			var area_burnt_late_prev = layer.feature.properties.area_burnt_late_24;
+			var pcnt_burnt_late_prev = layer.feature.properties.pcnt_burnt_late_24;
 			//
-			var area_burnt_early_24 = layer.feature.properties.area_burnt_early_24;
-			var pcnt_burnt_early_24 = layer.feature.properties.pcnt_burnt_early_24;
+			var area_burnt_early_current = layer.feature.properties.area_burnt_early_25;
+			var pcnt_burnt_early_current = layer.feature.properties.pcnt_burnt_early_25;
 			//
-			var area_burnt_late_24 = layer.feature.properties.area_burnt_late_24;
-			var pcnt_burnt_late_24 = layer.feature.properties.pcnt_burnt_late_24;
+			//var area_burnt_late_current = layer.feature.properties.area_burnt_late_25;
+			//var pcnt_burnt_late_current = layer.feature.properties.pcnt_burnt_late_25;
 			
 			//var fid = layer.feature.properties.fid;
 			propertyId = layer.feature.properties.fid;
@@ -641,9 +638,14 @@ pMap.on("click", function (event) {
 			popupContent += "<div>";
 			popupContent += "<br><b>Area & percentage of property burnt:</b><br>";
 			popupContent += "<table>";
-			popupContent += "<tr><td class='e-23'><b>Jan-Jun 2023</b></td><td class='l-23'><b>Jul-Dec 2023</b></td><td class='e-24'><b>Jan-Jun 2024</b></td><td class='l-24'><b>Jul 1-Nov 4 2024</b></td></tr>";
-			popupContent += "<tr><td class='e-23'>"+area_burnt_early_23+" km2</td><td class='l-23'>"+area_burnt_late_23+" km2</td><td class='e-24'>"+area_burnt_early_24+" km2</td><td class='l-24'>"+area_burnt_late_24+" km2</td></tr>";
-			popupContent += "<tr><td class='e-23'>"+pcnt_burnt_early_23+"%</td><td class='l-23'>"+pcnt_burnt_late_23+"%</td><td class='e-24'>"+pcnt_burnt_early_24+"%</td><td class='l-24'>"+pcnt_burnt_late_24+"%</td></tr>";
+			// 1st half of year (Jan-Jun)
+			popupContent += "<tr><td class='e-prev'><b>Jan-Jun 2024</b></td><td class='l-prev'><b>Jul-Dec 2024</b></td><td class='e-curr'><b>Jan 1-17 2025</b></td></tr>";
+			popupContent += "<tr><td class='e-prev'>"+area_burnt_early_prev+" km2</td><td class='l-prev'>"+area_burnt_late_prev+" km2</td><td class='e-curr'>"+area_burnt_early_current+" km2</td></tr>";
+			popupContent += "<tr><td class='e-prev'>"+pcnt_burnt_early_prev+"%</td><td class='l-prev'>"+pcnt_burnt_late_prev+"%</td><td class='e-curr'>"+pcnt_burnt_early_current+"%</td></tr>";			
+			// 2nd half of year (Jul-Dec)
+			//popupContent += "<tr><td class='e-prev'><b>Jan-Jun 2024</b></td><td class='l-prev'><b>Jul-Dec 2024</b></td><td class='e-curr'><b>Jan-Jun 2025</b></td><td class='l-curr'><b>Jul 1-Nov 4 2025</b></td></tr>";
+			//popupContent += "<tr><td class='e-prev'>"+area_burnt_early_prev+" km2</td><td class='l-prev'>"+area_burnt_late_prev+" km2</td><td class='e-curr'>"+area_burnt_early_current+" km2</td><td class='l-curr'>"+area_burnt_late_current+" km2</td></tr>";
+			//popupContent += "<tr><td class='e-prev'>"+pcnt_burnt_early_prev+"%</td><td class='l-prev'>"+pcnt_burnt_late_prev+"%</td><td class='e-curr'>"+pcnt_burnt_early_current+"%</td><td class='l-curr'>"+pcnt_burnt_late_current+"%</td></tr>";
 			popupContent += "</table>";
 			popupContent += "Firescar Data: <a href='https://firenorth.org.au/nafi3/'>https://firenorth.org.au/nafi3/</a>";
 			popupContent += "</div>";
@@ -717,23 +719,23 @@ function showModal() {
 	var district_info = "";
 	district_info += "<H3>"+selected_district+" District Summary</H3>";
 	district_info += "<image class='district-map' src='district_img/"+selected_district+".jpg'></image>";
-	district_info += "At 4 November 2024</br>";
+	district_info += "At 17 January 2025</br>";
 	district_info += "<div class='split-line'></div>";
 	district_info += "<div class='district-info'>";
 	
 	districts.eachLayer(function(layer){
 		if (selected_district == layer.feature.properties.DISTRICT){		
-			var district_area_burnt_early_23 = layer.feature.properties.area_burnt_early_23;
-			var district_pcnt_burnt_early_23 = layer.feature.properties.pcnt_burnt_early_23;
+			var district_area_burnt_early_prev = layer.feature.properties.area_burnt_early_24;
+			var district_pcnt_burnt_early_prev = layer.feature.properties.pcnt_burnt_early_24;
 			//
-			var district_area_burnt_late_23 = layer.feature.properties.area_burnt_late_23;
-			var district_pcnt_burnt_late_23 = layer.feature.properties.pcnt_burnt_late_23;
+			var district_area_burnt_late_prev = layer.feature.properties.area_burnt_late_24;
+			var district_pcnt_burnt_late_prev = layer.feature.properties.pcnt_burnt_late_24;
 			//
-			var district_area_burnt_early_24 = layer.feature.properties.area_burnt_early_24;
-			var district_pcnt_burnt_early_24 = layer.feature.properties.pcnt_burnt_early_24;
+			var district_area_burnt_early_current = layer.feature.properties.area_burnt_early_25;
+			var district_pcnt_burnt_early_current = layer.feature.properties.pcnt_burnt_early_25;
 			//
-			var district_area_burnt_late_24 = layer.feature.properties.area_burnt_late_24;
-			var district_pcnt_burnt_late_24 = layer.feature.properties.pcnt_burnt_late_24;
+			//var district_area_burnt_late_current = layer.feature.properties.area_burnt_late_25;
+			//var district_pcnt_burnt_late_current = layer.feature.properties.pcnt_burnt_late_25;
 			
 			district_info += "<b>District Area: </b>"+layer.feature.properties.AREA_KM2+" km2</br>";
 			district_info += "<br><b>Mean TSDM: </b>"+layer.feature.properties.MEAN+" kg/ha</br>";
@@ -743,9 +745,14 @@ function showModal() {
 			district_info += "<br><b>Area & percentage of district burnt:</b></br>";
 			district_info += "<br><b>*Note</b>- figures are for entire district (all land tenures)</br>";
 			district_info += "<table>";
-			district_info += "<tr><td class='e-23'><b>Jan-Jun 2023</b></td><td class='l-23'><b>Jul-Dec 2023</b></td><td class='e-24'><b>Jan-Jun 2024</b></td><td class='l-24'><b>Jul 1-Nov 4 2024</b></td></tr>";
-			district_info += "<tr><td class='e-23'>"+district_area_burnt_early_23+" km2</td><td class='l-23'>"+district_area_burnt_late_23+" km2</td><td class='e-24'>"+district_area_burnt_early_24+" km2</td><td class='l-24'>"+district_area_burnt_late_24+" km2</td></tr>";
-			district_info += "<tr><td class='e-23'>"+district_pcnt_burnt_early_23+"%</td><td class='l-23'>"+district_pcnt_burnt_late_23+"%</td><td class='e-24'>"+district_pcnt_burnt_early_24+"%</td><td class='l-24'>"+district_pcnt_burnt_late_24+"%</td></tr>";
+			// 1st half of year (Jan-Jun)
+			district_info += "<tr><td class='e-prev'><b>Jan-Jun 2024</b></td><td class='l-prev'><b>Jul-Dec 2024</b></td><td class='e-curr'><b>Jan 1-17 2025</b></td></tr>";
+			district_info += "<tr><td class='e-prev'>"+district_area_burnt_early_prev+" km2</td><td class='l-prev'>"+district_area_burnt_late_prev+" km2</td><td class='e-curr'>"+district_area_burnt_early_current+" km2</td></tr>";
+			district_info += "<tr><td class='e-prev'>"+district_pcnt_burnt_early_prev+"%</td><td class='l-prev'>"+district_pcnt_burnt_late_prev+"%</td><td class='e-curr'>"+district_pcnt_burnt_early_current+"%</td></tr>";			
+			// 2nd half of year (Jul-Dec)
+			//district_info += "<tr><td class='e-prev'><b>Jan-Jun 2024</b></td><td class='l-prev'><b>Jul-Dec 2024</b></td><td class='e-curr'><b>Jan-Jun 2025</b></td><td class='l-curr'><b>Jul 1-Nov 4 2025</b></td></tr>";
+			//district_info += "<tr><td class='e-prev'>"+area_burnt_early_prev+" km2</td><td class='l-prev'>"+area_burnt_late_prev+" km2</td><td class='e-curr'>"+area_burnt_early_current+" km2</td><td class='l-curr'>"+area_burnt_late_current+" km2</td></tr>";
+			//district_info += "<tr><td class='e-prev'>"+pcnt_burnt_early_prev+"%</td><td class='l-prev'>"+pcnt_burnt_late_prev+"%</td><td class='e-curr'>"+pcnt_burnt_early_current+"%</td><td class='l-curr'>"+pcnt_burnt_late_current+"%</td></tr>";
 			district_info += "</table>";
 		}
 	})
@@ -811,16 +818,16 @@ td{
 	font-size: 12px;
 }
 
-td.e-23{
+td.e-prev{
 	background-color: #ebd1ff;
 }
-td.l-23{
+td.l-prev{
 	background-color: #fea0d2;
 }
-td.e-24{
+td.e-curr{
 	background-color: #ffff9f;
 }
-td.l-24{
+td.l-curr{
 	background-color: #fdbf6f;
 }
 
