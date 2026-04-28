@@ -248,7 +248,7 @@ esri_imagery_basemap.options.maxZoom = 19;
 
 var aus_topo_attribution = 'Esri, USGS | © Commonwealth of Australia (Geoscience Australia) 2016. Creative Commons Attribution 4.0 International Licence. | Northern Territory Government, Esri, HERE, Garmin, Foursquare, FAO, METI/NASA, USGS'
 
-var aus_topo_basemap = L.tileLayer('https://services.ga.gov.au/gis/rest/services/AUSTopo_Topographic_Basemap/MapServer/WMTS/tile/1.0.0/AUSTopo_Topographic_Basemap/default/GoogleMapsCompatible/{z}/{y}/{x}.png', {
+var aus_topo_basemap = L.tileLayer('https://services.ga.gov.au/gis/rest/services/Topographic_Base_Map/MapServer/tile/{z}/{y}/{x}', {
 	attribution: aus_topo_attribution
 });
 
